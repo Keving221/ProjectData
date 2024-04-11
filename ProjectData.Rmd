@@ -9,17 +9,31 @@ output: html_document
 library(tidyverse)
 
 ```
+Kevin Enrique Garcia Martinez
+your partner (don't have a partner)
 
+your data
+So far I have 4 sets of data that I will be using.
+
+What's in it, what's interesting about it, where it comes from
+
+
+an introduction paragraph to the data
+
+
+a few questions that you plan to ask about the data/graphs you plan to make
+
+
+
+
+
+# Here we have Data regarding the suicides between diferent races and a graph that contains organized from most to least
 
 
 ```{r}
 library(tidyverse)
 
 
-
-
-
-library(dplyr)
 
 # Cargar los datos
 data <- read.csv("Death_rates_for_suicide__by_sex__race__Hispanic_origin__and_age__United_States.csv")
@@ -87,6 +101,8 @@ ggplot(race_suicide_rates, aes(x = reorder(STUB_LABEL, -Average_Estimate), y = A
 ```
 
 
+# Data2 has data that contains the differents drugs used.
+
 ```{r}
 
 data2 = read.csv("Drug_overdose_death_rates__by_drug_type__sex__age__race__and_Hispanic_origin__United_States.csv")
@@ -106,6 +122,7 @@ data2 %>%
 
 ```
 
+# Data 3 has different data from 2020 to 2023 regarding their different death causes im planning to use this data to see what is the highest cause of death and where suicides stands in that place
 
 ```{r}
 
@@ -123,11 +140,15 @@ head(data3)
 
 ```
 
+
+# Data 4 has similar data to data 2 where it shows data of various deaths by drug poisoning but it's broken down by each state 
 ```{r}
 
 
 
 data4 = read_csv("NCHS_-_Drug_Poisoning_Mortality_by_State__United_States.csv")
+
+
 
 
 ```
