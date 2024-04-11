@@ -1,0 +1,142 @@
+---
+title: "Suicide death rates"
+author: "Kevin Garcia"
+date: "2024-04-08"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+
+```
+
+
+
+```{r}
+library(tidyverse)
+
+
+
+
+
+library(dplyr)
+
+# Cargar los datos
+data <- read.csv("Death_rates_for_suicide__by_sex__race__Hispanic_origin__and_age__United_States.csv")
+
+# Filtrar los datos para el último año disponible y para todas las edades
+latest_year <- max(data$YEAR)
+filtered_data <- data[data$YEAR == latest_year & data$AGE == 'All ages', ]
+
+# Agrupar por raza/origen (STUB_LABEL) y calcular la tasa media de suicidios
+race_suicide_rates <- filtered_data %>%
+  group_by(STUB_LABEL) %>%
+  summarise(Average_Estimate = mean(ESTIMATE, na.rm = TRUE)) %>%
+  arrange(desc(Average_Estimate))
+
+# Mostrar las tasas de suicidio por raza/origen
+print(race_suicide_rates)
+
+
+# Crear un gráfico de barras
+ggplot(race_suicide_rates, aes(x = reorder(STUB_LABEL, -Average_Estimate), y = Average_Estimate)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  theme_minimal() +
+  coord_flip() + 
+  labs(x = "Race Origin", y = "Rate by 100,000",
+       title = "race and orgin",
+       subtitle = paste("For the year", latest_year)) +
+  theme(plot.title = element_text(size = 14, face = "bold"),
+        plot.subtitle = element_text(size = 12),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+
+
+
+#
+```
+
+
+```{r}
+# # Filtrar los grupos de interés
+# grupos_interes <- c("Male: Not Hispanic or Latino: American Indian or Alaska Native", "Female: Not Hispanic or Latino: American Indian or Alaska Native")
+# datos_filtrados <- annual_race_suicide_rates %>%
+#   filter(STUB_LABEL %in% grupos_interes)
+# 
+# # Crear el gráfico enfocado
+# ggplot(datos_filtrados, aes(x = YEAR, y = Average_Estimate, color = STUB_LABEL)) +
+#   geom_line() +
+#   geom_point(size = 0.5) +
+#   theme_minimal() +
+#   labs(x = "Year", y = "Rate by 100,00", 
+#        title = "Rate throughout the years",
+#        subtitle = "Not Hispanic or Latino: American Indian or Alaska Native") +
+#   theme(plot.title = element_text(size = 14, face = "bold"),
+#         plot.subtitle = element_text(size = 12),
+#         axis.title.x = element_text(size = 12),
+#         axis.title.y = element_text(size = 12),
+#         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+#         axis.text.y = element_text(size = 10),
+#         legend.title = element_text(size = 12),
+#         legend.text = element_text(size = 10))
+# 
+
+
+```
+
+
+```{r}
+
+data2 = read.csv("Drug_overdose_death_rates__by_drug_type__sex__age__race__and_Hispanic_origin__United_States.csv")
+
+data2 %>% 
+  filter(STUB_NAME == "Age", PANEL == "All drug overdose deaths") %>% 
+  ggplot(aes(x = YEAR, y= ESTIMATE, color = STUB_LABEL )) + geom_line() 
+
+
+data2 %>% 
+  filter(STUB_NAME == "Age") %>% 
+  ggplot(aes(x = YEAR, y= ESTIMATE, color = STUB_LABEL )) + geom_line() + facet_wrap(~ as.factor(PANEL))
+
+
+
+
+
+```
+
+
+```{r}
+
+data3 = read.csv("Monthly_Provisional_Counts_of_Deaths_by_Select_Causes__2020-2023.csv")
+
+
+
+```
+
+
+```{r}
+
+data3 = read.csv("Monthly_Provisional_Counts_of_Deaths_by_Select_Causes__2020-2023.csv")
+head(data3)
+
+```
+
+```{r}
+
+
+
+data4 = read_csv("NCHS_-_Drug_Poisoning_Mortality_by_State__United_States.csv")
+
+
+```
+
+
+
+```{r}
+glimpse(data4)
+
+
+```
+
