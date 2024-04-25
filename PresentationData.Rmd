@@ -1,0 +1,511 @@
+---
+title: "Final Presentation"
+author: "Kevin Garcia"
+date: "2024-04-25"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+
+
+
+
+```{r}
+library(plotly)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(kableExtra)
+library(stringr)
+```
+
+
+
+loading the different sets of data that will be used
+
+```{r}
+drugs_data = read.csv("Drug_overdose_death_rates__by_drug_type__sex__age__race__and_Hispanic_origin__United_States.csv")
+
+death_rates <- read.csv("Death_rates_for_suicide__by_sex__race__Hispanic_origin__and_age__United_States.csv")
+
+leading_causes_d = read.csv('NCHS_-_Leading_Causes_of_Death__United_States.csv')
+
+suicide_data <- read_csv("suicide-rate-by-country-2024.csv")
+
+california_data <- read.csv("suicide-lghc-indicator-21.csv")
+
+
+```
+
+
+# Questions:
+
+1. What are the highest causes of death and how do they compare to suicide deaths?
+2. What is the country with the highest suicide death rate?
+3. Focusing on the United States what is the State with the highest suicide rate?
+4. What is the city?
+5. What are the different types of drugs being used?
+6. What years had the highest suicide rates?
+7. What age group has the highest suicide rates?
+8. What gender has the highest suicide rates?
+
+
+
+
+
+# DATA REGARDING SUICIDES
+
+```{r}
+
+
+# suicide_data <- read_csv("suicide-rate-by-country-2024.csv") 
+# 
+# 
+# country_rate <- suicide_data %>%
+#   select(country, Combined_Suicide_Rate = suicideRateByCountry_rate2019both) %>%
+#   arrange(desc(Combined_Suicide_Rate)) %>%
+#   mutate(Rank = row_number())  # Add a ranking column after arranging
+# 
+# table_output <- kable(country_rate, format = "html", col.names = c("Rank", "Country", "Suicide Rate (2019)"), 
+#                       caption = "Ranked Suicide Rates by Country (2019)") %>%
+#   kable_styling(full_width = FALSE, position = "center") %>%
+#   scroll_box(width = "100%", height = "500px")
+# 
+# # Output the table
+# print(table_output)
+
+
+```
+
+
+# The United States is number 23 in the list
+
+- How does suicide compare against other causes of death
+
+
+
+```{r}
+
+
+suicides <- filter(leading_causes_d, Cause.Name == "Suicide")
+heart_disease <- filter(leading_causes_d, Cause.Name == "Heart disease")
+cancer <- filter(leading_causes_d, Cause.Name == "Cancer")
+
+
+
+suicide_stats <- suicides %>%
+  group_by(Year) %>%
+  summarize(Total_Deaths = sum(Deaths))
+
+heart_disease_stats <- heart_disease %>%
+  group_by(Year) %>%
+  summarize(Total_Deaths = sum(Deaths))
+
+cancer_stats <- cancer %>%
+  group_by(Year) %>%
+  summarize(Total_Deaths = sum(Deaths))
+
+
+ggplot() +
+  geom_line(data = suicide_stats, aes(x = Year, y = Total_Deaths, color = "Suicide")) +
+  geom_line(data = heart_disease_stats, aes(x = Year, y = Total_Deaths, color = "Heart Disease")) +
+  geom_line(data = cancer_stats, aes(x = Year, y = Total_Deaths, color = "Cancer")) +
+  labs(title = "Death Trends by Cause", x = "Year", y = "Total Deaths") + 
+  theme_bw()
+
+
+```
+
+
+# This is what happens when you isolate the data for suicides throughout the years
+
+
+
+```{r}
+
+
+# Filter data for suicides
+suicide_data <- leading_causes_d[leading_causes_d$Cause.Name == "Suicide",]
+
+# Summing up deaths by year
+suicide_trend <- aggregate(Deaths ~ Year, data = suicide_data, sum)
+
+# Plotting the data
+ggplot(suicide_trend, aes(x = Year, y = Deaths)) +
+  geom_line(group=1, colour="blue") +
+  geom_point(colour="red") +
+  labs(title = "Suicides Over the Years in the United States",
+       x = "Year",
+       y = "Number of Suicides") +
+  theme_minimal()
+
+
+```
+
+
+
+
+
+
+# Now let's look at the State with the highest suicide rate
+
+```{r}
+
+state_suicides <- leading_causes_d %>%
+  filter(Cause.Name== "Suicide", State != "United States") %>%
+  group_by(State) %>%
+  summarise(Total_Suicides = sum(Deaths)) %>%
+  arrange(desc(Total_Suicides))
+
+# Create the bar chart with the filtered data
+ggplot(state_suicides, aes(x = reorder(State, Total_Suicides), y = Total_Suicides)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +  
+  labs(title = "Total Suicides by State",
+       x = "Total Suicides",
+       y = "State") +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 5), 
+    plot.margin = unit(c(1, 1, 1, 1), "cm") 
+  )
+
+
+```
+
+
+# California is the state with the highest suicide rate
+
+- what about the city
+
+```{r}
+average_rates <- california_data %>%
+  group_by(Geography) %>%
+  summarise(Average_Rate = mean(Rate, na.rm = TRUE)) %>%
+  arrange(desc(Average_Rate))
+
+# Plot average rates by Geography
+ggplot(average_rates, aes(x = reorder(Geography, -Average_Rate), y = Average_Rate)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(title = "Average Suicide Rates by City in California",
+       x = "City",
+       y = "Average Rate per 100,000 People") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+
+
+# DRUG RELATED DATA
+
+
+```{r}
+
+drugs_data %>% 
+  filter(STUB_NAME == "Age") %>% 
+  ggplot(aes(x = YEAR, y= ESTIMATE, color = STUB_LABEL )) + geom_line() + facet_wrap(~ as.factor(PANEL))
+
+
+```
+
+
+## Will be focusing on the two types of drugs being used that have the most movement
+
+- First
+
+```{r}
+# Filter and plot data for "Drug overdose deaths involving other synthetic opioids (other than methadone)"
+synthetic_opioids_data <- drugs_data %>%
+  filter(STUB_NAME == "Age", PANEL == "Drug overdose deaths involving other synthetic opioids (other than methadone)") %>%
+  ggplot(aes(x = YEAR, y = ESTIMATE, color = STUB_LABEL)) +
+  geom_line() +
+  labs(title = "Overdose Deaths Involving Other Synthetic Opioids (Excluding Methadone)",
+       x = "Year",
+       y = "Estimate",
+       color = "Group") +
+  theme_minimal()
+
+print(synthetic_opioids_data)
+```
+
+-second
+
+```{r}
+
+
+any_opioid_data <- drugs_data %>%
+  filter(STUB_NAME == "Age", PANEL == "Drug overdose deaths involving any opioid") %>%
+  ggplot(aes(x = YEAR, y = ESTIMATE, color = STUB_LABEL)) +
+  geom_line() +
+  labs(title = "Overdose Deaths Involving Any Opioid",
+       x = "Year",
+       y = "Estimate",
+       color = "Group") +
+  theme_minimal()
+
+
+print(any_opioid_data)
+
+
+```
+
+
+
+
+
+# The peak years
+
+
+```{r}
+
+
+# Load and prepare the dataset
+drugs_data <- read_csv("Drug_overdose_death_rates__by_drug_type__sex__age__race__and_Hispanic_origin__United_States.csv") %>%
+  rename(DrugType = PANEL) %>%
+  mutate(
+    SimpleDrugType = case_when(
+      DrugType == "Drug overdose deaths involving other synthetic opioids (other than methadone)" ~ "Synthetic Opioids (Excl. Methadone)",
+      DrugType == "Drug overdose deaths involving any opioid" ~ "Any Opioid",
+      TRUE ~ DrugType
+    ),
+    Gender = case_when(
+      str_detect(STUB_LABEL, "Male:") ~ "Male",
+      str_detect(STUB_LABEL, "Female:") ~ "Female",
+      TRUE ~ "Unspecified"
+    )
+  )
+
+# Calculate and filter for peak years in a generic way for reuse
+total_by_year <- drugs_data %>%
+  filter(SimpleDrugType %in% c("Synthetic Opioids (Excl. Methadone)", "Any Opioid")) %>%
+  group_by(SimpleDrugType, YEAR) %>%
+  summarise(Total_Estimate = sum(ESTIMATE, na.rm = TRUE), .groups = 'drop')
+
+peak_years <- total_by_year %>%
+  group_by(SimpleDrugType) %>%
+  slice_max(Total_Estimate) %>%
+  ungroup()
+
+peak_data_analysis <- drugs_data %>%
+  filter(
+    SimpleDrugType %in% peak_years$SimpleDrugType,
+    YEAR %in% peak_years$YEAR
+  )
+
+# Prepare the common part for different racial analyses
+peak_data_analysis <- peak_data_analysis %>%
+  mutate(Race = case_when(
+    str_detect(STUB_LABEL, "White") ~ "White",
+    str_detect(STUB_LABEL, "Black or African American") ~ "Black or African American",
+    str_detect(STUB_LABEL, "American Indian or Alaska Native") ~ "American Indian or Alaska Native",
+    str_detect(STUB_LABEL, "Asian or Pacific Islander") ~ "Asian or Pacific Islander",
+    str_detect(STUB_LABEL, "Hispanic or Latino") ~ "Hispanic or Latino",
+    TRUE ~ "Other"
+  ))
+
+```
+
+
+# PLOTING OF THE DIFFERENT RACES IN PEAK YEARS
+
+
+
+```{r}
+
+ggplot(peak_data_analysis, aes(x = Race, y = ESTIMATE, fill = Race)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  facet_wrap(~SimpleDrugType, scales = "free_x") +
+  labs(title = "Drug Overdose Deaths by Race in Peak Years",
+       x = "Race",
+       y = "Total Estimates",
+       fill = "Race") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+
+# WHITE RACE BY GENDER
+
+
+```{r}
+# Filter data for White race by gender
+white_data_by_gender <- peak_data_analysis %>%
+  filter(Race == "White") %>%
+  group_by(SimpleDrugType, Gender, YEAR) %>%
+  summarise(Total_Deaths = sum(ESTIMATE, na.rm = TRUE), .groups = 'drop')
+
+# Filter data for Black or African American race by gender
+black_data_by_gender <- peak_data_analysis %>%
+  filter(Race == "Black or African American") %>%
+  group_by(SimpleDrugType, Gender, YEAR) %>%
+  summarise(Total_Deaths = sum(ESTIMATE, na.rm = TRUE), .groups = 'drop')
+
+# Calculate total deaths across all groups and years for each drug type
+total_deaths_by_drug <- peak_data_analysis %>%
+  group_by(SimpleDrugType) %>%
+  summarise(Total_Deaths = sum(ESTIMATE, na.rm = TRUE), .groups = 'drop')
+
+```
+
+
+
+```{r}
+ggplot(white_data_by_gender, aes(x = YEAR, y = Total_Deaths, fill = Gender)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  facet_wrap(~SimpleDrugType) +
+  labs(title = "Total Deaths by Year for White Race by Gender",
+       x = "Year",
+       y = "Total Deaths",
+       fill = "Gender") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+
+
+# BLACK RACE BY GENDER
+
+
+```{r}
+ggplot(black_data_by_gender, aes(x = YEAR, y = Total_Deaths, fill = Gender)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  facet_wrap(~SimpleDrugType) +
+  labs(title = "Total Deaths by Year for the African American Race by Gender",
+       x = "Year",
+       y = "Total Deaths",
+       fill = "Gender") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+
+# Total deaths across both groups 
+
+
+
+```{r}
+
+ggplot(total_deaths_by_drug, aes(x = SimpleDrugType, y = Total_Deaths, fill = SimpleDrugType)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Deaths Across Both Groups by Drug Type",
+       x = "Drug Type",
+       y = "Total Deaths",
+       fill = "Drug Type") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+
+
+
+
+# DENSITY GRAHP OF GENDER THROUGHOUT THE YEARS
+
+```{r}
+# Load the dataset
+drugs_data <- read_csv("Drug_overdose_death_rates__by_drug_type__sex__age__race__and_Hispanic_origin__United_States.csv")
+
+# Rename 'PANEL' to 'DrugType' and create simplified names
+drugs_data <- drugs_data %>%
+  rename(DrugType = PANEL) %>%
+  mutate(
+    SimpleDrugType = case_when(
+      DrugType == "Drug overdose deaths involving other synthetic opioids (other than methadone)" ~ "Synth. Opioids (excl. Methadone)",
+      DrugType == "Drug overdose deaths involving any opioid" ~ "Any Opioid",
+      TRUE ~ "Other Types"
+    ),
+    Gender = case_when(
+      str_detect(STUB_LABEL, "Male: White") ~ "Male",
+      str_detect(STUB_LABEL, "Female: White") ~ "Female",
+      TRUE ~ "Unspecified"
+    )
+  )
+
+# Filter data specifically for 'White' race and specified drug types
+filtered_data <- drugs_data %>%
+  filter(
+    SimpleDrugType %in% c("Synth. Opioids (excl. Methadone)", "Any Opioid"),
+    str_detect(STUB_LABEL, "White"),
+    Gender %in% c("Male", "Female")
+  )
+
+# Plotting density of ESTIMATE over the years, combining male and female in the same graph for each drug type
+ggplot(filtered_data, aes(x = ESTIMATE, fill = Gender)) +
+  geom_density(alpha = 0.5) +
+  facet_wrap(~SimpleDrugType) +
+  labs(title = "Combined Density of Drug Overdose Deaths Over Years by Gender, White",
+       x = "Total Deaths Estimate",
+       y = "Density") +
+  scale_fill_manual(values = c("Male" = "blue", "Female" = "red")) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    strip.text.x = element_text(size = 12),
+    legend.position = "top"
+  )
+
+# Print the plot
+print(ggplot)
+
+```
+
+
+
+# DATA THAT INCLUDES A WIDER RANGE OF YEARS FROM 1950 TO 2020
+
+```{r}
+age_specific_data <- death_rates %>%
+  filter(STUB_NAME == "Age", AGE != "All ages")
+
+
+p <- ggplot(age_specific_data, aes(x = YEAR, y = ESTIMATE, color = AGE)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Interactive Plot of Suicide Rates by Age Group",
+       x = "Year",
+       y = "Suicide Rate per 100,000 Population",
+       color = "Age Group")
+  
+
+ggplotly(p)
+```
+
+
+
+# The age groups that have the highest suicides rates throughout the years
+
+
+```{r}
+
+# Calculate the average suicide rate for each age group and sort them in descending order
+average_age_rates <- death_rates %>%
+  group_by(AGE) %>%
+  summarise(AverageRate = mean(ESTIMATE, na.rm = TRUE)) %>%
+  arrange(desc(AverageRate))
+
+# Extract the top 3 age groups with the highest average suicide rates
+top_groups <- head(average_age_rates, 5)
+
+ggplot(top_groups, aes(x = AGE, y = AverageRate, fill = AGE)) +
+  geom_bar(stat = "identity") + # Use pre-calculated heights for bars
+  labs(title = "Top 5 Age Groups with the Highest Average Suicide Rates",
+       x = "Age Group",
+       y = "Average Suicide Rate") +
+  theme_minimal() +
+  theme(legend.position = "none") 
+  
+
+
+```
+
